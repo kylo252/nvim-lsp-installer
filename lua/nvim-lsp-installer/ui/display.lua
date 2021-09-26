@@ -183,8 +183,8 @@ function M.new_view_only_win(name)
     end
 
     local draw = process.debounced(function(view)
-        local win_valid = vim.api.nvim_win_is_valid(win_id)
-        local buf_valid = vim.api.nvim_buf_is_valid(bufnr)
+        local win_valid = win_id ~= nil and vim.api.nvim_win_is_valid(win_id)
+        local buf_valid = bufnr ~= nil and vim.api.nvim_buf_is_valid(bufnr)
         if not win_valid or not buf_valid then
             -- the window has been closed or the buffer is somehow no longer valid
             unsubscribe(true)
@@ -236,12 +236,16 @@ function M.new_view_only_win(name)
                 draw(renderer(new_state))
             end)
 
+            -- we don't need to subscribe to state changes until the window is actually opened
+            unsubscribe(true)
+
             return mutate_state, get_state
         end,
         open = vim.schedule_wrap(function(opts)
             -- log.debug { "opening window" }
             assert(has_initiated, "Display has not been initiated, cannot open.")
             if win_id and vim.api.nvim_win_is_valid(win_id) then
+                -- window is already open
                 return
             end
             unsubscribe(false)
