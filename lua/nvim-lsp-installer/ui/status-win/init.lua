@@ -2,7 +2,6 @@ local Ui = require "nvim-lsp-installer.ui"
 local fs = require "nvim-lsp-installer.fs"
 local log = require "nvim-lsp-installer.log"
 local Data = require "nvim-lsp-installer.data"
-local display = require "nvim-lsp-installer.ui.display"
 
 local function ServerGroupHeading(props)
     return Ui.HlTextNode {
@@ -230,9 +229,9 @@ local function create_server_state(server)
 end
 
 local function init(all_servers)
-    local window = display.new_view_only_win "LSP servers"
+    local Display = require("nvim-lsp-installer.ui.display"):new()
 
-    window.view(function(state)
+    Display:view(function(state)
         return Indent {
             Header(),
             Servers(state.servers),
@@ -245,12 +244,12 @@ local function init(all_servers)
         servers[server.name] = create_server_state(server)
     end
 
-    local mutate_state, get_state = window.init {
+    local mutate_state, get_state = Display:init {
         servers = servers,
     }
 
     local function open()
-        window.open {
+        Display:open {
             win_width = 95,
             highlight_groups = {
                 "hi def LspInstallerHeader gui=bold guifg=#ebcb8b",
