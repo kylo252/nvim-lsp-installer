@@ -17,12 +17,27 @@ M.settings = settings.set
 ---@param server_identifiers string[]
 local function ensure_installed(server_identifiers)
     local candidates = {}
+    local JobExecutionPool = require "nvim-lsp-installer.jobs.pool"
+    local job_pool = JobExecutionPool:new {
+        size = settings.current.max_concurrent_installers,
+    }
     for _, server_identifier in ipairs(server_identifiers) do
         local server_name, version = servers.parse_server_identifier(server_identifier)
         local ok, server = servers.get_server(server_name)
         if ok and not server:is_installed() then
             table.insert(candidates, server_name)
-            server:install(version)
+            -- server:install(version)
+            job_pool:supply(function(cb)
+                server:install_attached({
+                    requested_server_version = requested_version,
+                    -- there are probably more parameters needed..
+                }, function(success)
+                    candidates = candidates - 1
+                    if candidates == 0 then
+                        print "we're done!!"
+                    end
+                end)
+            end)
         end
     end
     if #candidates > 0 then
